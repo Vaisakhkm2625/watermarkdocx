@@ -1,5 +1,5 @@
 <script>
-	import { Canvas, Rect, Circle, StaticCanvas } from 'fabric'; // browsea
+	import { Canvas, Rect, Circle, Text, StaticCanvas } from 'fabric'; // browsea
 	import { onMount } from 'svelte';
 
 	let mainFabricCanvas;
@@ -14,6 +14,18 @@
 		canvasIds.forEach((id) => {
 			//canvases.push(new StaticCanvas(id));
 			canvases.push(new Canvas(id));
+		});
+
+		mainFabricCanvas.on('object:modified', (e) => {
+			applyChages();
+		});
+
+		mainFabricCanvas.on('object:moving', (e) => {
+			applyChages();
+		});
+
+		mainFabricCanvas.on('object:scaling', (e) => {
+			applyChages();
 		});
 
 		// Example: Add an object to canvas
@@ -41,6 +53,18 @@
 		mainFabricCanvas.add(circle);
 	}
 
+	let inputText = '';
+
+	function addText() {
+		const text = new Text(inputText, {
+			left: 100,
+			top: 100,
+			fill: 'black'
+		});
+
+		mainFabricCanvas.add(text);
+	}
+
 	function applyChages() {
 		let objects = JSON.stringify(mainFabricCanvas.toJSON());
 		console.log(objects);
@@ -62,5 +86,8 @@
 	{/each}
 	<button on:click={addrect}>add rectangle </button>
 	<button on:click={addcircle}>add circle</button>
+	<input bind:value={inputText} />
+	{inputText}
+	<button on:click={addText}>add Text</button>
 	<button on:click={applyChages}>Apply changes</button>
 </div>
