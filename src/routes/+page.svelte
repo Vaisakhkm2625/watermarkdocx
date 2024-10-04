@@ -24,7 +24,7 @@
 	}
 	let component;
 
-	let canvasIds = ['canvas1', 'canvas2']; // Add more IDs as needed
+	let canvasIds = ['canvas1', 'canvas2', 'canvas3']; // Add more IDs as needed
 </script>
 
 <div>
