@@ -94,6 +94,7 @@
 	// Synchronize objects (without background image) across canvases
 	function syncCanvasObjects() {
 		const objectsJSON = mainFabricCanvas.toJSON();
+		console.log(objectsJSON);
 
 		canvases.forEach((canvas) => {
 			if (canvas !== mainFabricCanvas) {
@@ -101,8 +102,35 @@
 					canvas.requestRenderAll();
 				});
 
+				const scaleX = canvas.width / mainFabricCanvas.width;
+				const scaleY = canvas.height / mainFabricCanvas.height;
+
+				const scaleRatio = Math.min(canvas.height / mainFabricCanvas.height);
+
 				setTimeout(() => {
 					canvas.set({ backgroundImage: canvas.canvasBGImage });
+
+					canvas.getObjects().forEach((obj) => {
+						// Scale object's position and dimensions
+
+						const scalePosX =
+							(canvas.width - obj.width * obj.scaleX * scaleRatio) /
+							(mainFabricCanvas.width - obj.width * obj.scaleX);
+
+						const scalePosY =
+							(canvas.height - obj.height * obj.scaleY * scaleRatio) /
+							(mainFabricCanvas.height - obj.height * obj.scaleY);
+
+						obj.set({
+							left: obj.left * scalePosX,
+							top: obj.top * scalePosY,
+							scaleX: obj.scaleX * scaleRatio,
+							scaleY: obj.scaleY * scaleRatio
+						});
+
+						obj.setCoords(); // Update the object's coordinates
+					});
+
 					canvas.requestRenderAll();
 				}, 0);
 
@@ -136,3 +164,9 @@
 
 	<button on:click={syncCanvasObjects}>Sync Canvas Objects</button>
 </div>
+
+<style>
+	canvas {
+		border: 1px solid black;
+	}
+</style>
