@@ -13,9 +13,9 @@
 
 		addrect();
 
-		mainFabricCanvas.on('object:modified', applyChanges);
-		mainFabricCanvas.on('object:moving', applyChanges);
-		mainFabricCanvas.on('object:scaling', applyChanges);
+		mainFabricCanvas.on('object:modified', syncCanvasObjects);
+		mainFabricCanvas.on('object:moving', syncCanvasObjects);
+		mainFabricCanvas.on('object:scaling', syncCanvasObjects);
 	});
 
 	function addrect() {
@@ -64,13 +64,17 @@
 					setTimeout(() => {
 						// Wait for canvas to be added to DOM
 						const newCanvas = new Canvas(newCanvasId);
-						newCanvas.set({
-							backgroundImage: new FabricImage(imgElement, {
-								scaleX: newCanvas.width / imgElement.width,
-								scaleY: newCanvas.height / imgElement.height
-							})
-						});
+						//const canvasBGImage = new FabricImage(imgElement, {
+						//	scaleX: newCanvas.width / imgElement.width,
+						//	scaleY: newCanvas.height / imgElement.height
+						//});
+						const canvasBGImage = new FabricImage(imgElement);
+
+						newCanvas.set({ backgroundImage: canvasBGImage });
+						newCanvas.setDimensions({ width: imgElement.width, height: imgElement.height });
 						newCanvas.requestRenderAll();
+
+						newCanvas.canvasBGImage = canvasBGImage;
 						canvases.push(newCanvas); // Push new canvas to canvases array
 					}, 0);
 				};
@@ -79,16 +83,37 @@
 		}
 	}
 
-	// This function replicates the main canvas content to other canvases
-	function applyChanges() {
-		let objects = JSON.stringify(mainFabricCanvas.toJSON());
-		console.log(objects);
+	function setbgall() {
+		canvases.forEach((canvas) => {
+			console.log('canvas: ', { canvas });
+			canvas.set({ backgroundImage: canvas.canvasBGImage }); // this is setting background image when i click button
+			canvas.requestRenderAll();
+		});
+	}
+
+	// Synchronize objects (without background image) across canvases
+	function syncCanvasObjects() {
+		const objectsJSON = mainFabricCanvas.toJSON();
 
 		canvases.forEach((canvas) => {
-			// Only replicate objects, not background images
 			if (canvas !== mainFabricCanvas) {
-				canvas.loadFromJSON(objects);
-				canvas.requestRenderAll();
+				canvas.loadFromJSON(objectsJSON, (objects) => {
+					canvas.requestRenderAll();
+				});
+
+				setTimeout(() => {
+					canvas.set({ backgroundImage: canvas.canvasBGImage });
+					canvas.requestRenderAll();
+				}, 0);
+
+				// canvases.forEach((canvas) => {
+				// 	if (canvas !== mainFabricCanvas) {
+				// 		console.log('before: ', { canvas });
+				// 		canvas.loadFromJSON(objectsJSON, () => {
+				// 			console.log('after: ', { canvas });
+				// 			canvas.set({ backgroundImage: canvas.canvasBGImage }); // this is not setting bg image
+				// 			canvas.requestRenderAll();
+				// 		});
 			}
 		});
 	}
@@ -103,10 +128,11 @@
 	<button on:click={addcircle}>Add Circle</button>
 	<input bind:value={inputText} />
 	<button on:click={addText}>Add Text</button>
+	<button on:click={setbgall}>setbg</button>
 
 	<!-- Image upload section for background -->
 	<input type="file" accept="image/*" on:change={(e) => (selectedImageFile = e.target.files[0])} />
 	<button on:click={setBackgroundImage}>Create Canvas with Background Image</button>
 
-	<button on:click={applyChanges}>Apply Changes to Other Canvases</button>
+	<button on:click={syncCanvasObjects}>Sync Canvas Objects</button>
 </div>
