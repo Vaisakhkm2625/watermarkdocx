@@ -1,9 +1,9 @@
 <script>
-	import { Canvas, Rect, Circle, Text, StaticCanvas, Image as FabricImage } from 'fabric';
+	import { Canvas, Rect, Circle, Text, Image as FabricImage } from 'fabric';
 	import { onMount } from 'svelte';
 
 	let mainFabricCanvas;
-	let canvasIds = ['canvas1', 'canvas2']; // Add more IDs as needed
+	let canvasIds = []; // No predefined canvas IDs, dynamically add them
 	let canvases = [];
 	let inputText = '';
 	let selectedImageFile = null; // For image uploads
@@ -12,10 +12,6 @@
 		mainFabricCanvas = new Canvas('mainFabricCanvas');
 
 		addrect();
-
-		canvasIds.forEach((id) => {
-			canvases.push(new Canvas(id));
-		});
 
 		mainFabricCanvas.on('object:modified', applyChanges);
 		mainFabricCanvas.on('object:moving', applyChanges);
@@ -52,7 +48,7 @@
 		mainFabricCanvas.add(text);
 	}
 
-	// Handle image uploads and set as background
+	// Create a new canvas for each uploaded image and set a unique background image
 	function setBackgroundImage() {
 		if (selectedImageFile) {
 			const reader = new FileReader();
@@ -60,32 +56,36 @@
 				const imgElement = new Image();
 				imgElement.src = event.target.result;
 				imgElement.onload = function () {
-					const fabricImg = new FabricImage(imgElement);
+					// Dynamically generate a new canvas ID
+					const newCanvasId = `canvas${canvases.length + 1}`;
+					canvasIds = [...canvasIds, newCanvasId]; // Update canvasIds array
 
-					// Set the background image for the main canvas
-					mainFabricCanvas.set({
-						backgroundImage: fabricImg
-					});
-					mainFabricCanvas.requestRenderAll(); // Re-render the canvas
-
-					// Set the background image for each canvas in the array
-					canvases.forEach((canvas) => {
-						canvas.set({
-							backgroundImage: fabricImg
+					// Create a new canvas instance and set its background image
+					setTimeout(() => {
+						// Wait for canvas to be added to DOM
+						const newCanvas = new Canvas(newCanvasId);
+						newCanvas.set({
+							backgroundImage: new FabricImage(imgElement, {
+								scaleX: newCanvas.width / imgElement.width,
+								scaleY: newCanvas.height / imgElement.height
+							})
 						});
-						canvas.requestRenderAll(); // Re-render each canvas
-					});
+						newCanvas.requestRenderAll();
+						canvases.push(newCanvas); // Push new canvas to canvases array
+					}, 0);
 				};
 			};
 			reader.readAsDataURL(selectedImageFile);
 		}
 	}
 
+	// This function replicates the main canvas content to other canvases
 	function applyChanges() {
 		let objects = JSON.stringify(mainFabricCanvas.toJSON());
 		console.log(objects);
 
 		canvases.forEach((canvas) => {
+			// Only replicate objects, not background images
 			if (canvas !== mainFabricCanvas) {
 				canvas.loadFromJSON(objects);
 				canvas.requestRenderAll();
@@ -106,7 +106,7 @@
 
 	<!-- Image upload section for background -->
 	<input type="file" accept="image/*" on:change={(e) => (selectedImageFile = e.target.files[0])} />
-	<button on:click={setBackgroundImage}>Set Background Image</button>
+	<button on:click={setBackgroundImage}>Create Canvas with Background Image</button>
 
-	<button on:click={applyChanges}>Apply Changes</button>
+	<button on:click={applyChanges}>Apply Changes to Other Canvases</button>
 </div>
