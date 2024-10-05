@@ -1,23 +1,22 @@
 <script>
+	import { Canvas, Rect, Circle, Text, StaticCanvas, Image as FabricImage } from 'fabric';
 	import { onMount } from 'svelte';
-	import { Canvas, Rect, Circle, FabricText, FabricImage } from 'fabric';
 
 	let mainFabricCanvas;
 	let canvasIds = ['canvas1', 'canvas2']; // Add more IDs as needed
 	let canvases = [];
 	let inputText = '';
+	let selectedImageFile = null; // For image uploads
 
 	onMount(() => {
-		// Initialize the main Fabric canvas
 		mainFabricCanvas = new Canvas('mainFabricCanvas');
+
 		addrect();
 
-		// Initialize additional canvases
 		canvasIds.forEach((id) => {
 			canvases.push(new Canvas(id));
 		});
 
-		// Sync modifications across all canvases
 		mainFabricCanvas.on('object:modified', applyChanges);
 		mainFabricCanvas.on('object:moving', applyChanges);
 		mainFabricCanvas.on('object:scaling', applyChanges);
@@ -53,56 +52,61 @@
 		mainFabricCanvas.add(text);
 	}
 
-	function applyChanges() {
-		let objects = JSON.stringify(mainFabricCanvas.toJSON());
-
-		// Sync the changes to other canvases
-		canvases.forEach((canvas) => {
-			if (canvas !== mainFabricCanvas) {
-				canvas.loadFromJSON(objects, canvas.renderAll.bind(canvas));
-			}
-		});
-	}
-
-	// Function to handle image file uploads
-	function handleImageUpload(event) {
-		const files = event.target.files;
-
-		// Load each image file and set as background for each canvas
-		for (let i = 0; i < files.length; i++) {
+	// Handle image uploads and set as background
+	function setBackgroundImage() {
+		if (selectedImageFile) {
 			const reader = new FileReader();
-			reader.onload = function (e) {
-				const img = new window.Image();
-				img.src = e.target.result;
-				img.onload = function () {
-					if (canvases[i]) {
-						const fabricImg = new FabricImage(img, {
-							left: 0,
-							top: 0
+			reader.onload = function (event) {
+				const imgElement = new Image();
+				imgElement.src = event.target.result;
+				imgElement.onload = function () {
+					const fabricImg = new FabricImage(imgElement);
+
+					// Set the background image for the main canvas
+					mainFabricCanvas.set({
+						backgroundImage: fabricImg
+					});
+					mainFabricCanvas.requestRenderAll(); // Re-render the canvas
+
+					// Set the background image for each canvas in the array
+					canvases.forEach((canvas) => {
+						canvas.set({
+							backgroundImage: fabricImg
 						});
-						canvases[i].setBackgroundImage(fabricImg, canvases[i].renderAll.bind(canvases[i]));
-					}
+						canvas.requestRenderAll(); // Re-render each canvas
+					});
 				};
 			};
-			reader.readAsDataURL(files[i]);
+			reader.readAsDataURL(selectedImageFile);
 		}
+	}
+
+	function applyChanges() {
+		let objects = JSON.stringify(mainFabricCanvas.toJSON());
+		console.log(objects);
+
+		canvases.forEach((canvas) => {
+			if (canvas !== mainFabricCanvas) {
+				canvas.loadFromJSON(objects);
+				canvas.requestRenderAll();
+			}
+		});
 	}
 </script>
 
 <div>
-	<canvas id="mainFabricCanvas" width="500" height="500"></canvas>
+	<canvas id="mainFabricCanvas"></canvas>
 	{#each canvasIds as id}
-		<canvas {id} width="500" height="500"></canvas>
+		<canvas {id}></canvas>
 	{/each}
-
-	<!-- UI controls -->
 	<button on:click={addrect}>Add Rectangle</button>
 	<button on:click={addcircle}>Add Circle</button>
 	<input bind:value={inputText} />
-	{inputText}
 	<button on:click={addText}>Add Text</button>
-	<button on:click={applyChanges}>Apply Changes</button>
 
-	<!-- File input for multiple images -->
-	<input type="file" multiple on:change={handleImageUpload} />
+	<!-- Image upload section for background -->
+	<input type="file" accept="image/*" on:change={(e) => (selectedImageFile = e.target.files[0])} />
+	<button on:click={setBackgroundImage}>Set Background Image</button>
+
+	<button on:click={applyChanges}>Apply Changes</button>
 </div>
