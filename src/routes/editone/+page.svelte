@@ -18,6 +18,7 @@
 		mainFabricCanvas.on('object:moving', syncCanvasObjects);
 		mainFabricCanvas.on('object:scaling', syncCanvasObjects);
 	});
+	let fileInput;
 
 	function addrect() {
 		const rect = new Rect({
@@ -178,65 +179,133 @@
 	}
 </script>
 
-<div class="section">
-	<div class="title">docx image batch editor</div>
-	<div class="subtitle">batch Apply watermarks, add text etc in image in a docx file</div>
-</div>
-<div class="section">
-	<input class="file-input" type="file" bind:this={fileInput} name="resume" accept=".docx" />
-	<button onclick="processDocx()">Add Watermark</button>
-	<a id="downloadLink" style="display: none;">Download Watermarked Docx</a>
-</div>
-
-<div class="section">
+<section class="section">
 	<div class="container">
-		<canvas id="mainFabricCanvas" class="canvas" width="500" height="300"></canvas>
-		<div>
-			<button on:click={addrect} class="button">Add Rectangle</button>
-			<button on:click={addcircle} class="button">Add Circle</button>
-			<input bind:value={inputText} class="input" />
-			<button on:click={addText} class="button">Add Text</button>
-			<input type="color" class="input" />
+		<h1 class="title">Docx Image Batch Editor</h1>
+		<h2 class="subtitle">Batch apply watermarks, add text, etc. to images in a docx file.</h2>
+
+		<!-- File Input -->
+		<div class="field">
+			<div class="file has-name is-fullwidth">
+				<label class="file-label">
+					<input
+						class="file-input"
+						type="file"
+						bind:this={fileInput}
+						name="resume"
+						accept=".docx"
+					/>
+					<span class="file-cta">
+						<span class="file-label">Choose a docx file…</span>
+					</span>
+					<span class="file-name">No file chosen</span>
+				</label>
+			</div>
 		</div>
 
-		<!-- <button on:click={setBgAll} >setbg</button> -->
-
-		<!-- Image upload section for background -->
-		<input
-			type="file"
-			accept="image/*"
-			on:change={(e) => (selectedImageFile = e.target.files[0])}
-		/>
-		<button on:click={setBackgroundImage}>Create Canvas with Background Image</button>
-
-		<!--<button on:click={syncCanvasObjects}>Sync Canvas Objects</button>-->
-
-		{#each canvases as canvas}
-			<div>
-				<br />
-				<br />
-				sync: {canvas.sync}
-				<input type="checkbox" bind:checked={canvas.sync} />
-
-				<button
-					on:click={() => {
-						exportCanvas(canvas.fabriccanvas);
-					}}
-					class="button"
-				>
-					Export
-				</button>
-
-				<canvas class="canvas" id={canvas.id}></canvas>
+		<div class="field">
+			<div class="control">
+				<!-- <button class="button is-primary" on:click={processDocx}>Add Watermark</button> -->
+				<button class="button is-primary">Add Watermark</button>
 			</div>
-		{/each}
-	</div>
-</div>
+		</div>
 
-<style>
-	.canvas {
-		border: 1px solid white;
-		width: 400px;
-		height: 300px;
-	}
-</style>
+		<a id="downloadLink" style="display: none;">Download Watermarked Docx</a>
+	</div>
+</section>
+
+<section class="section">
+	<div class="container">
+		<div class="columns">
+			<!-- Left Column: Main Canvas -->
+			<div class="column is-two-thirds">
+				<div class="box">
+					<canvas id="mainFabricCanvas" class="canvas" width="500" height="300"></canvas>
+				</div>
+			</div>
+
+			<!-- Right Column: Controls in a Card -->
+			<div class="column is-one-third">
+				<div class="card">
+					<header class="card-header">
+						<p class="card-header-title">Canvas Controls</p>
+					</header>
+
+					<div class="card-content">
+						<!-- Add Shapes and Text -->
+						<div class="buttons">
+							<button class="button is-link is-fullwidth" on:click={addrect}>Add Rectangle</button>
+							<button class="button is-link is-fullwidth" on:click={addcircle}>Add Circle</button>
+						</div>
+
+						<!-- Add Text -->
+						<div class="field">
+							<label class="label">Add Text</label>
+							<div class="control">
+								<input class="input" bind:value={inputText} placeholder="Type text" />
+							</div>
+							<div class="control">
+								<button class="button is-link is-fullwidth" on:click={addText}>Add Text</button>
+							</div>
+						</div>
+
+						<!-- Pick Color -->
+						<div class="field">
+							<label class="label">Pick Color</label>
+							<div class="control">
+								<input type="color" class="input" />
+							</div>
+						</div>
+
+						<!-- Image Upload -->
+						<div class="field">
+							<label class="label">Upload Background Image</label>
+							<div class="file has-name is-fullwidth">
+								<label class="file-label">
+									<input
+										class="file-input"
+										type="file"
+										accept="image/*"
+										on:change={(e) => (selectedImageFile = e.target.files[0])}
+									/>
+									<span class="file-cta">
+										<span class="file-label">Choose an image…</span>
+									</span>
+									<span class="file-name">No image chosen</span>
+								</label>
+							</div>
+						</div>
+						<div class="control">
+							<button class="button is-link is-fullwidth" on:click={setBackgroundImage}
+								>Create Canvas with Background Image</button
+							>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="section">
+	<div class="container">
+		<div class="columns">
+			<div class="column is-half">
+				{#each canvases as canvas}
+					<div class="box">
+						<label class="checkbox">
+							<input type="checkbox" bind:checked={canvas.sync} />
+							Sync
+						</label>
+
+						<canvas class="canvas" id={canvas.id}></canvas>
+
+						<button class="button is-link" on:click={() => exportCanvas(canvas.fabriccanvas)}
+							>Export</button
+						>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</div>
+</section>
