@@ -3,8 +3,9 @@
 	import { onMount } from 'svelte';
 
 	let mainFabricCanvas;
-	let canvasIds = []; // No predefined canvas IDs, dynamically add them
-	let canvases = [];
+	// {id: canvas1, fabriccanvas: fabricCanvasInstance, sync: bool}
+	let canvases = []; // No predefined canvas IDs, dynamically add them
+	//let = [];
 	let inputText = '';
 	let selectedImageFile = null; // For image uploads
 
@@ -48,6 +49,10 @@
 		mainFabricCanvas.add(text);
 	}
 
+	const findCanvasById = (id) => {
+		return canvases.find((canvas) => canvas.id === id);
+	};
+
 	// Create a new canvas for each uploaded image and set a unique background image
 	function setBackgroundImage() {
 		if (selectedImageFile) {
@@ -58,7 +63,7 @@
 				imgElement.onload = function () {
 					// Dynamically generate a new canvas ID
 					const newCanvasId = `canvas${canvases.length + 1}`;
-					canvasIds = [...canvasIds, newCanvasId]; // Update canvasIds array
+					canvases = [...canvases, { id: newCanvasId, sync: true }]; // Update canvases array
 
 					// Create a new canvas instance and set its background image
 					setTimeout(() => {
@@ -75,7 +80,7 @@
 						newCanvas.requestRenderAll();
 
 						newCanvas.canvasBGImage = canvasBGImage;
-						canvases.push(newCanvas); // Push new canvas to canvases array
+						findCanvasById(newCanvasId).fabriccanvas = newCanvas;
 					}, 0);
 				};
 			};
@@ -83,21 +88,22 @@
 		}
 	}
 
-	function setbgall() {
+	function setBgAll() {
 		canvases.forEach((canvas) => {
 			console.log('canvas: ', { canvas });
-			canvas.set({ backgroundImage: canvas.canvasBGImage }); // this is setting background image when i click button
+			canvas.set({ backgroundImage: canvas.fabriccanvas.canvasBGImage }); // this is setting background image when i click button
 			canvas.requestRenderAll();
 		});
 	}
 
-	// Synchronize objects (without background image) across canvases
 	function syncCanvasObjects() {
 		const objectsJSON = mainFabricCanvas.toJSON();
 		console.log(objectsJSON);
 
-		canvases.forEach((canvas) => {
-			if (canvas !== mainFabricCanvas) {
+		canvases.forEach((canvasItem) => {
+			let canvas = canvasItem.fabriccanvas;
+
+			if (canvas !== mainFabricCanvas && canvasItem.sync) {
 				canvas.loadFromJSON(objectsJSON, (objects) => {
 					canvas.requestRenderAll();
 				});
@@ -108,6 +114,8 @@
 				const scaleRatio = Math.min(canvas.height / mainFabricCanvas.height);
 
 				setTimeout(() => {
+					canvases;
+
 					canvas.set({ backgroundImage: canvas.canvasBGImage });
 
 					canvas.getObjects().forEach((obj) => {
@@ -134,7 +142,8 @@
 					canvas.requestRenderAll();
 				}, 0);
 
-				// canvases.forEach((canvas) => {
+				// canvasIds.forEach((c) => {
+				//   canvas = c.fabriccanvas;
 				// 	if (canvas !== mainFabricCanvas) {
 				// 		console.log('before: ', { canvas });
 				// 		canvas.loadFromJSON(objectsJSON, () => {
@@ -148,21 +157,27 @@
 </script>
 
 <div>
-	<canvas id="mainFabricCanvas"></canvas>
-	{#each canvasIds as id}
-		<canvas {id}></canvas>
-	{/each}
+	<canvas id="mainFabricCanvas" width="500" height="300"></canvas>
 	<button on:click={addrect}>Add Rectangle</button>
 	<button on:click={addcircle}>Add Circle</button>
 	<input bind:value={inputText} />
 	<button on:click={addText}>Add Text</button>
-	<button on:click={setbgall}>setbg</button>
+	<button on:click={setBgAll}>setbg</button>
 
 	<!-- Image upload section for background -->
 	<input type="file" accept="image/*" on:change={(e) => (selectedImageFile = e.target.files[0])} />
 	<button on:click={setBackgroundImage}>Create Canvas with Background Image</button>
 
 	<button on:click={syncCanvasObjects}>Sync Canvas Objects</button>
+	{#each canvases as id}
+		<div>
+			<br />
+			<br />
+			sync: {id.sync}
+			<input type="checkbox" bind:checked={id.sync} />
+			<canvas id={id.id}></canvas>
+		</div>
+	{/each}
 </div>
 
 <style>
