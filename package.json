@@ -25,6 +25,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"bulma": "^1.0.2",
 		"fabric": "^6.4.3"
 	}
 }
