@@ -12,13 +12,14 @@
     <button onclick="processDocx()">Add Watermark</button>
     <a id="downloadLink" style="display: none;">Download Watermarked Docx</a>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.24.4/docxtemplater.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.0.5/pizzip.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script> 
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.24.4/docxtemplater.min.js"></script>-->
+     <!--   <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.0.5/pizzip.min.js"></script> -->
 
     <script>
         function processDocx() {
             const fileInput = document.getElementById('docxInput');
+
             if (fileInput.files.length === 0) {
                 alert('Please select a docx file');
                 return;
@@ -34,10 +35,12 @@
                 await zip.loadAsync(arrayBuffer);
 
                 // Unzip and process the content of docx (which is a zip file)
-                const docxContent = await zip.file('word/document.xml').async("string");
+                //const docxContent = await zip.file('word/document.xml').async("string");
+                console.log(zip.files)
 
                 // Add watermark to images (logic depends on where images are stored)
                 const imageFiles = Object.keys(zip.files).filter(fileName => fileName.includes('media/'));
+
 
                 for (let i = 0; i < imageFiles.length; i++) {
                     const imageFile = zip.files[imageFiles[i]];
@@ -48,7 +51,7 @@
                 }
 
                 // Rezip the file
-                zip.file('word/document.xml', docxContent);
+                //zip.file('word/document.xml', docxContent);
                 const newDocx = await zip.generateAsync({ type: 'blob' });
 
                 // Create download link

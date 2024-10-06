@@ -53,6 +53,23 @@
 		return canvases.find((canvas) => canvas.id === id);
 	};
 
+	const exportCanvas = (fabricCanvas) => {
+		// Export the canvas to a data URL in PNG format with full resolution
+		const dataURL = fabricCanvas.toDataURL({
+			format: 'png',
+			quality: 1, // Maximum quality for PNG
+			multiplier: 1 // No scaling; export at full internal size
+		});
+
+		// Create a temporary link to trigger the download
+		const link = document.createElement('a');
+		link.href = dataURL;
+		link.download = 'exported-image.png';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	};
+
 	// Create a new canvas for each uploaded image and set a unique background image
 	function setBackgroundImage() {
 		if (selectedImageFile) {
@@ -68,16 +85,21 @@
 					// Create a new canvas instance and set its background image
 					setTimeout(() => {
 						// Wait for canvas to be added to DOM
-						const newCanvas = new Canvas(newCanvasId);
+						const canvasBGImage = new FabricImage(imgElement);
+						const newCanvas = new Canvas(newCanvasId, {
+							width: imgElement.width,
+							height: imgElement.height
+						});
 						//const canvasBGImage = new FabricImage(imgElement, {
 						//	scaleX: newCanvas.width / imgElement.width,
 						//	scaleY: newCanvas.height / imgElement.height
 						//});
-						const canvasBGImage = new FabricImage(imgElement);
 
 						newCanvas.set({ backgroundImage: canvasBGImage });
-						newCanvas.setDimensions({ width: imgElement.width, height: imgElement.height });
+						//newCanvas.setDimensions({ width: imgElement.width, height: imgElement.height });
 						newCanvas.requestRenderAll();
+						//newCanvas.lowerCanvasEl.style.width = '400px';
+						//newCanvas.lowerCanvasEl.style.height = '400px';
 
 						newCanvas.canvasBGImage = canvasBGImage;
 						findCanvasById(newCanvasId).fabriccanvas = newCanvas;
@@ -156,32 +178,65 @@
 	}
 </script>
 
-<div>
-	<canvas id="mainFabricCanvas" width="500" height="300"></canvas>
-	<button on:click={addrect}>Add Rectangle</button>
-	<button on:click={addcircle}>Add Circle</button>
-	<input bind:value={inputText} />
-	<button on:click={addText}>Add Text</button>
-	<button on:click={setBgAll}>setbg</button>
+<div class="section">
+	<div class="title">docx image batch editor</div>
+	<div class="subtitle">batch Apply watermarks, add text etc in image in a docx file</div>
+</div>
+<div class="section">
+	<input class="file-input" type="file" bind:this={fileInput} name="resume" accept=".docx" />
+	<button onclick="processDocx()">Add Watermark</button>
+	<a id="downloadLink" style="display: none;">Download Watermarked Docx</a>
+</div>
 
-	<!-- Image upload section for background -->
-	<input type="file" accept="image/*" on:change={(e) => (selectedImageFile = e.target.files[0])} />
-	<button on:click={setBackgroundImage}>Create Canvas with Background Image</button>
-
-	<button on:click={syncCanvasObjects}>Sync Canvas Objects</button>
-	{#each canvases as id}
+<div class="section">
+	<div class="container">
+		<canvas id="mainFabricCanvas" class="canvas" width="500" height="300"></canvas>
 		<div>
-			<br />
-			<br />
-			sync: {id.sync}
-			<input type="checkbox" bind:checked={id.sync} />
-			<canvas id={id.id}></canvas>
+			<button on:click={addrect} class="button">Add Rectangle</button>
+			<button on:click={addcircle} class="button">Add Circle</button>
+			<input bind:value={inputText} class="input" />
+			<button on:click={addText} class="button">Add Text</button>
+			<input type="color" class="input" />
 		</div>
-	{/each}
+
+		<!-- <button on:click={setBgAll} >setbg</button> -->
+
+		<!-- Image upload section for background -->
+		<input
+			type="file"
+			accept="image/*"
+			on:change={(e) => (selectedImageFile = e.target.files[0])}
+		/>
+		<button on:click={setBackgroundImage}>Create Canvas with Background Image</button>
+
+		<!--<button on:click={syncCanvasObjects}>Sync Canvas Objects</button>-->
+
+		{#each canvases as canvas}
+			<div>
+				<br />
+				<br />
+				sync: {canvas.sync}
+				<input type="checkbox" bind:checked={canvas.sync} />
+
+				<button
+					on:click={() => {
+						exportCanvas(canvas.fabriccanvas);
+					}}
+					class="button"
+				>
+					Export
+				</button>
+
+				<canvas class="canvas" id={canvas.id}></canvas>
+			</div>
+		{/each}
+	</div>
 </div>
 
 <style>
-	canvas {
-		border: 1px solid black;
+	.canvas {
+		border: 1px solid white;
+		width: 400px;
+		height: 300px;
 	}
 </style>

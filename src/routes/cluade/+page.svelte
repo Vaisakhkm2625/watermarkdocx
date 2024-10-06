@@ -1,16 +1,24 @@
 <script>
+	import { Canvas, Rect, Circle, Text, Image as FabricImage } from 'fabric';
 	import { onMount } from 'svelte';
-	import { Canvas, Rect, Circle, Object } from 'fabric';
-	import FabricCanvas from '../FabricCanvas.svelte';
+	import JSZip from 'jszip';
 
-	let canvas1, canvas2;
+	let mainFabricCanvas;
+	let canvases = [];
+	let selectedDocxFile = null; // For .docx uploads
+	let zip = new JSZip(); // Initialize JSZip
 
 	onMount(() => {
-		// Initialize the first canvas
-		const fabricCanvas1 = new Canvas('canvas1');
-		const fabricCanvas2 = new Canvas('canvas2');
+		mainFabricCanvas = new Canvas('mainFabricCanvas');
 
-		// Add some objects to the first canvas
+		addrect();
+
+		mainFabricCanvas.on('object:modified', syncCanvasObjects);
+		mainFabricCanvas.on('object:moving', syncCanvasObjects);
+		mainFabricCanvas.on('object:scaling', syncCanvasObjects);
+	});
+
+	function addrect() {
 		const rect = new Rect({
 			left: 100,
 			top: 100,
@@ -18,57 +26,112 @@
 			width: 50,
 			height: 50
 		});
+		mainFabricCanvas.add(rect);
+	}
 
-		const circle = new Circle({
-			left: 200,
-			top: 100,
-			fill: 'blue',
-			radius: 25
-		});
+	// Extract images from the .docx file
+	async function extractImagesFromDocx() {
+		if (selectedDocxFile) {
+			const zipFile = await JSZip.loadAsync(selectedDocxFile);
+			zip = zipFile; // Store zip for later repackaging
 
-		fabricCanvas1.add(rect);
-		fabricCanvas1.add(circle);
+			const imagePaths = [];
+			zip.forEach((relativePath, file) => {
+				if (relativePath.startsWith('word/media/') && file.name.match(/\.(png|jpg|jpeg)$/)) {
+					imagePaths.push(relativePath);
+				}
+			});
 
-		// Function to transfer objects to the new canvas
-		function transferObjects() {
-			const objects = fabricCanvas1.getObjects();
-			const json = fabricCanvas1.toObject(); // Get the objects in JSON format
-			console.log(json);
+			// Load images into canvases
+			imagePaths.forEach(async (path, index) => {
+				const imageBlob = await zip.file(path).async('blob');
+				const imgElement = new Image();
+				imgElement.src = URL.createObjectURL(imageBlob);
+				imgElement.onload = function () {
+					const newCanvasId = `canvas${canvases.length + 1}`;
+					canvases = [...canvases, { id: newCanvasId, sync: true }]; // Update canvases array
 
-			// Clear the second canvas
-			fabricCanvas2.clear();
+					setTimeout(() => {
+						const newCanvas = new Canvas(newCanvasId);
+						const canvasBGImage = new FabricImage(imgElement);
+						newCanvas.set({ backgroundImage: canvasBGImage });
+						newCanvas.setDimensions({ width: imgElement.width, height: imgElement.height });
+						newCanvas.requestRenderAll();
 
-			// Load the objects into the second canvas
-			//fabricCanvas2.loadFromJSON(json, fabricCanvas2.renderAll.bind(fabricCanvas2));
-
-			Object.fromObject(json, function (newob) {
-				console.log(newob);
-				newob.forEach(function (obj) {
-					console.log(obj);
-					fabricCanvas2.add(obj);
-				});
-				fabricCanvas2.requestRenderAll();
+						findCanvasById(newCanvasId).fabriccanvas = newCanvas;
+					}, 0);
+				};
 			});
 		}
+	}
 
-		// Attach the transfer function to a button click
-		document.getElementById('transferButton').addEventListener('click', transferObjects);
-	});
+	const findCanvasById = (id) => {
+		return canvases.find((canvas) => canvas.id === id);
+	};
+
+	// Sync canvas objects across all canvases
+	function syncCanvasObjects() {
+		const objectsJSON = mainFabricCanvas.toJSON();
+		canvases.forEach((canvasItem) => {
+			let canvas = canvasItem.fabriccanvas;
+			if (canvas !== mainFabricCanvas && canvasItem.sync) {
+				canvas.loadFromJSON(objectsJSON, () => {
+					canvas.requestRenderAll();
+				});
+			}
+		});
+	}
+
+	// Download the modified .docx file
+	async function downloadModifiedDocx() {
+		// Iterate over each canvas and export modified images
+		for (let canvasItem of canvases) {
+			const canvas = canvasItem.fabriccanvas;
+			const dataUrl = canvas.toDataURL(); // Export modified canvas as image
+			const imageBlob = await (await fetch(dataUrl)).blob();
+
+			// Update the images in the .docx
+			const filePath = `word/media/image${canvases.indexOf(canvasItem) + 1}.png`; // Assuming image numbering
+			zip.file(filePath, imageBlob);
+		}
+
+		// Generate the new .docx file
+		const modifiedDocxBlob = await zip.generateAsync({ type: 'blob' });
+		const modifiedDocxUrl = URL.createObjectURL(modifiedDocxBlob);
+
+		// Create download link
+		const a = document.createElement('a');
+		a.href = modifiedDocxUrl;
+		a.download = 'modified_document.docx';
+		a.click();
+	}
 </script>
 
 <div>
-	<h2>Canvas 1</h2>
-	<canvas id="canvas1" width="400" height="400"></canvas>
+	<canvas id="mainFabricCanvas" width="500" height="300"></canvas>
+	<button on:click={addrect} class="button">Add Rectangle</button>
+	<button on:click={syncCanvasObjects} class="button">Sync Canvases</button>
 
-	<button id="transferButton">Transfer Objects to Canvas 2</button>
+	<!-- .docx upload section -->
+	<input type="file" accept=".docx" on:change={(e) => (selectedDocxFile = e.target.files[0])} />
+	<button on:click={extractImagesFromDocx}>Load Images from .docx</button>
 
-	<h2>Canvas 2</h2>
-	<canvas id="canvas2" width="400" height="400"></canvas>
+	<!-- Download modified .docx -->
+	<button on:click={downloadModifiedDocx}>Download Modified .docx</button>
+
+	{#each canvases as id}
+		<div>
+			<br />
+			<br />
+			sync: {id.sync}
+			<input type="checkbox" bind:checked={id.sync} />
+			<canvas id={id.id}></canvas>
+		</div>
+	{/each}
 </div>
 
 <style>
 	canvas {
 		border: 1px solid black;
-		margin: 10px;
 	}
 </style>
