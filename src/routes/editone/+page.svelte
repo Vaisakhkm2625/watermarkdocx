@@ -8,6 +8,7 @@
 	//let = [];
 	let inputText = '';
 	let selectedImageFile = null; // For image uploads
+	let style = '-webkit-transform: scale(1);';
 
 	onMount(() => {
 		mainFabricCanvas = new Canvas('mainFabricCanvas');
@@ -53,6 +54,19 @@
 	const findCanvasById = (id) => {
 		return canvases.find((canvas) => canvas.id === id);
 	};
+
+	function resizeCanvas(canvas, outerCanvasContainer) {
+		//const outerCanvasContainer = outerCanvasContainer;
+
+		const ratio = canvas.getWidth() / canvas.getHeight();
+		const containerWidth = outerCanvasContainer.clientWidth;
+		const containerHeight = outerCanvasContainer.clientHeight;
+
+		const scale = containerWidth / canvas.getWidth();
+		const zoom = canvas.getZoom() * scale;
+		canvas.setDimensions({ width: containerWidth, height: containerWidth / ratio });
+		canvas.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+	}
 
 	const exportCanvas = (fabricCanvas) => {
 		// Export the canvas to a data URL in PNG format with full resolution
@@ -219,9 +233,14 @@
 		<div class="columns">
 			<!-- Left Column: Main Canvas -->
 			<div class="column is-two-thirds">
-				<div class="box">
-					<canvas id="mainFabricCanvas" class="canvas" width="500" height="300"></canvas>
-				</div>
+				<!--<div class="box"> -->
+				<canvas
+					id="mainFabricCanvas"
+					class="main-canvas"
+					width={`${window.screen.width * (2 / 3) - 100}px`}
+					height={`${window.screen.height * (2 / 3)}px`}
+				></canvas>
+				<!-- </div>-->
 			</div>
 
 			<!-- Right Column: Controls in a Card -->
@@ -309,3 +328,21 @@
 		</div>
 	</div>
 </section>
+
+<style>
+	/*canvas {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+
+		-webkit-transform: scale(0.5);
+		-webkit-transform-origin: 0 0;
+		transform-origin: 0 0;
+	} */
+
+	.main-canvas {
+		border: 1px solid #ccc;
+	}
+</style>
