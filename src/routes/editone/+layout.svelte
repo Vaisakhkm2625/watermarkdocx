@@ -29,8 +29,9 @@
 <footer class="footer">
 	<div class="content has-text-centered">
 		<p>
-			<strong>Docx Image Batch Editor</strong> by <a href="#">Your Name</a>. Built with
-			<a href="https://bulma.io/">Bulma</a> and Svelte.
+			<strong>Docx Image Batch Editor</strong> by <a href="https://me.linuxwith.in">Vaisakh K M</a>.
+			Built with
+			<a href="https://bulma.io/">Bulma</a>, JSDoc and Svelte.
 		</p>
 	</div>
 </footer>
