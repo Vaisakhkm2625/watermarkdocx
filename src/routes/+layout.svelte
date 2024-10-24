@@ -11,13 +11,15 @@
 
 	<div class="navbar-menu">
 		<div class="navbar-start">
-			<a class="navbar-item" href="/">Home</a>
-			<a class="navbar-item" href="/about">About</a>
+			<a class="navbar-item" href="https://linuxwith.in">Home</a>
+			<a class="navbar-item" href="https://me.linuxwith.in">About</a>
 		</div>
 		<div class="navbar-end">
 			<div class="navbar-item">
 				<div class="buttons">
-					<a class="button is-light"> Source Code </a>
+					<a class="button is-light" href="https://github.com/Vaisakhkm2625/watermarkdocx">
+						Source Code
+					</a>
 				</div>
 			</div>
 		</div>
