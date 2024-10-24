@@ -17,7 +17,7 @@
 		<div class="navbar-end">
 			<div class="navbar-item">
 				<div class="buttons">
-					<a class="button is-light"> Contact Us </a>
+					<a class="button is-light"> Source Code </a>
 				</div>
 			</div>
 		</div>

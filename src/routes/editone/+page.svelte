@@ -3,6 +3,8 @@
 	import { onMount } from 'svelte';
 	import JSZip from 'jszip';
 
+	let debug = false;
+
 	let mainFabricCanvas;
 	// {id: canvas1, fabriccanvas: fabricCanvasInstance, sync: bool,transformedStyleRatio,imageName}
 	let canvases = []; // No predefined canvas IDs, dynamically add them
@@ -11,8 +13,12 @@
 	let selectedImageFile = null; // For image uploads
 	let selectedDocxFile = null; // For image uploads
 	let selectedDocxFileZip = null;
+	let useDebounce = true;
 
-	let canvasSelectedObject = null;
+	let fonts = ['Arial', 'Courier New', 'Georgia', 'Times New Roman', 'Verdana'];
+	let selectedFont = 'Arial';
+	let selectedColor = 'red';
+	let selectedOpacity = 1;
 
 	let style = '-webkit-transform: scale(1);';
 
@@ -21,9 +27,34 @@
 
 		addrect();
 
-		mainFabricCanvas.on('object:modified', syncCanvasObjects);
-		mainFabricCanvas.on('object:moving', syncCanvasObjects);
-		mainFabricCanvas.on('object:scaling', syncCanvasObjects);
+		mainFabricCanvas.on('after:render', () => {
+			if (!useDebounce) {
+				syncCanvasObjects();
+			} else {
+				debouncedSyncCanvasObjects();
+			}
+		});
+
+		//mainFabricCanvas.on('object:modified', syncCanvasObjects);
+		//mainFabricCanvas.on('object:moving', syncCanvasObjects);
+		//mainFabricCanvas.on('object:scaling', syncCanvasObjects);
+
+		//// Object selection event
+		//mainFabricCanvas.on('selection:created', function (e) {
+		//	selectedObject = e.selected[0];
+		//	syncCanvasObjects();
+		//});
+
+		//// Deselect event
+		//mainFabricCanvas.on('selection:cleared', function () {
+		//	selectedObject = null;
+		//	syncCanvasObjects();
+		//});
+		////
+		//mainFabricCanvas.on('selection:updated', function (e) {
+		//	selectedObject = e.selected[0];
+		//	syncCanvasObjects();
+		//});
 	});
 
 	let fileInput;
@@ -93,6 +124,7 @@
 				const imageBlob = await imageFile.async('blob');
 				setImageCanvas(URL.createObjectURL(imageBlob), imageFiles[i]);
 			}
+			syncCanvasObjects();
 		};
 
 		reader.readAsArrayBuffer(selectedDocxFile);
@@ -102,7 +134,7 @@
 		const rect = new Rect({
 			left: 100,
 			top: 100,
-			fill: 'red',
+			fill: selectedColor,
 			width: 50,
 			height: 50
 		});
@@ -112,7 +144,7 @@
 	function addcircle() {
 		const circle = new Circle({
 			radius: 20,
-			fill: 'green',
+			fill: selectedColor,
 			left: 100,
 			top: 100
 		});
@@ -123,9 +155,44 @@
 		const text = new Text(inputText, {
 			left: 100,
 			top: 100,
+			fontFamily: selectedFont,
 			fill: 'black'
 		});
 		mainFabricCanvas.add(text);
+	}
+
+	function updateSelectionColor(newColor) {
+		const activeObject = mainFabricCanvas.getActiveObject();
+
+		console.log({ selectedColor });
+		if (activeObject) {
+			activeObject.set('fill', newColor);
+			mainFabricCanvas.requestRenderAll();
+		}
+	}
+
+	function updateSelectionOpacity(newOpacity) {
+		const activeObject = mainFabricCanvas.getActiveObject();
+
+		console.log({ selectedColor });
+		if (activeObject) {
+			activeObject.set('opacity', newOpacity);
+			mainFabricCanvas.requestRenderAll();
+		}
+	}
+
+	function updateSelectionFont(newFont) {
+		const activeObject = mainFabricCanvas.getActiveObject();
+		if (activeObject && activeObject.type === 'text') {
+			activeObject.set('fontFamily', newFont);
+			mainFabricCanvas.requestRenderAll();
+		}
+	}
+
+	//opacity
+
+	function deleteSelection() {
+		mainFabricCanvas.remove(mainFabricCanvas.getActiveObject());
 	}
 
 	const findCanvasById = (id) => {
@@ -228,6 +295,16 @@
 			canvas.requestRenderAll();
 		});
 	}
+
+	function debounce(func, wait) {
+		let timeout;
+		return function (...args) {
+			clearTimeout(timeout);
+			timeout = setTimeout(() => func.apply(this, args), wait);
+		};
+	}
+
+	const debouncedSyncCanvasObjects = debounce(syncCanvasObjects, 100);
 
 	function syncCanvasObjects() {
 		const objectsJSON = mainFabricCanvas.toJSON();
@@ -352,8 +429,18 @@
 					<div class="card-content">
 						<!-- Add Shapes and Text -->
 						<div class="buttons">
-							<button class="button is-link is-fullwidth" on:click={addrect}>Add Rectangle</button>
-							<button class="button is-link is-fullwidth" on:click={addcircle}>Add Circle</button>
+							<button class="button is-link is-fullwidth" on:click={addrect}>
+								Add Rectangle
+							</button>
+							<button class="button is-primary is-fullwidth" on:click={addcircle}>
+								Add Circle
+							</button>
+						</div>
+
+						<div>
+							<button class="button is-danger is-fullwidth" on:click={deleteSelection}>
+								Delete
+							</button>
 						</div>
 
 						<!-- Add Text -->
@@ -367,32 +454,83 @@
 							</div>
 						</div>
 
-						<!-- Image Upload -->
-						<div class="field">
-							<label class="label">Upload Background Image</label>
-							<div class="file has-name is-fullwidth">
-								<label class="file-label">
-									<input
-										class="file-input"
-										type="file"
-										accept="image/*"
-										on:change={(e) => (selectedImageFile = e.target.files[0])}
-									/>
-									<span class="file-cta">
-										<span class="file-label">Choose an image…</span>
-									</span>
-									<span class="file-name">
-										{selectedImageFile ? selectedImageFile.name : 'hell'}</span
-									>
-								</label>
+						<!-- {#if mainFabricCanvas.getActiveObject()} -->
+						<div>
+							<label for="color" class="label">Pick Color</label>
+							<div name="color" class="control">
+								<input
+									type="color"
+									class="input"
+									bind:value={selectedColor}
+									on:input={(e) => updateSelectionColor(e.target.value)}
+								/>
 							</div>
+
+							<!-- Opacity Slider -->
+							<label for="opacity-slider">Set Opacity:</label>
+							<input
+								id="opacity-slider"
+								type="range"
+								min="0"
+								max="1"
+								step="0.01"
+								bind:value={selectedOpacity}
+								on:input={(e) => updateSelectionOpacity(e.target.value)}
+							/>
+
+							<!-- {#if selectedObject.type === 'textbox'} -->
+							<div>
+								<label for="font">Font family:</label>
+
+								<select
+									bind:value={selectedFont}
+									on:change={(e) => updateSelectionFont(e.target.value)}
+									class="select"
+								>
+									{#each fonts as font}
+										<option value={font}>{font}</option>
+									{/each}
+								</select>
+							</div>
+							<!-- {/if} -->
+						</div>
+						<!-- {/if} -->
+
+						<div>
+							<label>
+								<input type="checkbox" bind:checked={useDebounce} />
+								Enable Debouncing (improved perf)
+							</label>
 						</div>
 
-						<div class="control">
-							<button class="button is-link is-fullwidth" on:click={setBackgroundImage}
-								>Create Canvas with Background Image</button
-							>
-						</div>
+						{#if debug}
+							<!-- Image Upload -->
+							<div class="field">
+								<label class="label">Upload Background Image</label>
+								<div class="file has-name is-fullwidth">
+									<label class="file-label">
+										<input
+											class="file-input"
+											type="file"
+											accept="image/*"
+											on:change={(e) => (selectedImageFile = e.target.files[0])}
+										/>
+										<span class="file-cta">
+											<span class="file-label">Choose an image…</span>
+										</span>
+										<span class="file-name">
+											{selectedImageFile ? selectedImageFile.name : 'hell'}</span
+										>
+									</label>
+								</div>
+							</div>
+
+							<div class="control">
+								<button class="button is-link is-fullwidth" on:click={setBackgroundImage}
+									>Create Canvas with Background Image</button
+								>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -444,6 +582,6 @@
 
 	.main-canvas {
 		border: 1px solid #ccc;
-		/* border-radius: 10px; */
+		border-radius: 10px;
 	}
 </style>
