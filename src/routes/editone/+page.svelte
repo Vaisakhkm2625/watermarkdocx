@@ -4,12 +4,15 @@
 	import JSZip from 'jszip';
 
 	let mainFabricCanvas;
-	// {id: canvas1, fabriccanvas: fabricCanvasInstance, sync: bool,transformedStyleRatio}
+	// {id: canvas1, fabriccanvas: fabricCanvasInstance, sync: bool,transformedStyleRatio,imageName}
 	let canvases = []; // No predefined canvas IDs, dynamically add them
 	//let = [];
 	let inputText = '';
 	let selectedImageFile = null; // For image uploads
 	let selectedDocxFile = null; // For image uploads
+	let selectedDocxFileZip = null;
+
+	let canvasSelectedObject = null;
 
 	let style = '-webkit-transform: scale(1);';
 
@@ -34,6 +37,40 @@
 		}
 	}
 
+	async function exportDocx() {
+		console.log('exporting');
+
+		canvases.forEach((item) => {
+			if (item.imageName !== undefined) {
+				console.log(item.imageName);
+
+				const exportedImageUrl = item.fabriccanvas.toDataURL({
+					format: 'png',
+					quality: 1, // Maximum quality for PNG
+					multiplier: 1 // No scaling; export at full internal size
+				});
+
+				const binaryDataString = atob(exportedImageUrl.replace(/^data:image\/png;base64,/, ''));
+
+				const bytes = new Uint8Array(binaryDataString.length);
+				for (let i = 0; i < binaryDataString.length; i++) {
+					bytes[i] = binaryDataString.charCodeAt(i);
+				}
+
+				selectedDocxFileZip.file(item.imageName, bytes, { binary: true });
+			}
+		});
+
+		// Generate the new .docx file
+		const newDocx = await selectedDocxFileZip.generateAsync({ type: 'blob' });
+
+		// Create a download link for the new .docx file
+		const downloadLink = document.createElement('a');
+		downloadLink.href = URL.createObjectURL(newDocx);
+		downloadLink.download = 'watermarked_docx.docx';
+		downloadLink.click();
+	}
+
 	async function extractImages() {
 		console.log('extracting images');
 
@@ -42,17 +79,19 @@
 		reader.onload = async function (event) {
 			const arrayBuffer = event.target.result;
 
-			const zip = new JSZip();
-			await zip.loadAsync(arrayBuffer);
+			selectedDocxFileZip = new JSZip();
+			await selectedDocxFileZip.loadAsync(arrayBuffer);
 
-			const imageFiles = Object.keys(zip.files).filter((fileName) => fileName.includes('media/'));
+			const imageFiles = Object.keys(selectedDocxFileZip.files).filter((fileName) =>
+				fileName.includes('media/')
+			);
 			console.log(imageFiles);
 
 			for (let i = 0; i < imageFiles.length; i++) {
-				const imageFile = zip.files[imageFiles[i]];
+				const imageFile = selectedDocxFileZip.files[imageFiles[i]];
 
-				selectedImageFile = await imageFile.async('blob');
-				setBackgroundImage();
+				const imageBlob = await imageFile.async('blob');
+				setImageCanvas(URL.createObjectURL(imageBlob), imageFiles[i]);
 			}
 		};
 
@@ -135,9 +174,9 @@
 		}
 	}
 
-	function setImageCanvas(imageUrl) {
+	function setImageCanvas(imageUrl, imageName = undefined) {
 		const imgElement = new Image();
-		imgElement.src = imageUrl;
+		imgElement.src = imageUrl; //imageBlob
 		console.log({ imgElement });
 
 		imgElement.onload = function () {
@@ -148,7 +187,12 @@
 			console.log(transformedStyleRatio);
 			canvases = [
 				...canvases,
-				{ id: newCanvasId, sync: true, transformedStyleRatio: transformedStyleRatio }
+				{
+					id: newCanvasId,
+					sync: true,
+					transformedStyleRatio: transformedStyleRatio,
+					imageName: imageName
+				}
 			]; // Update canvases array
 
 			// Create a new canvas instance and set its background image
@@ -203,7 +247,7 @@
 				const scaleRatio = Math.min(canvas.height / mainFabricCanvas.height);
 
 				setTimeout(() => {
-					canvases;
+					//canvases;
 
 					canvas.set({ backgroundImage: canvas.canvasBGImage });
 
@@ -265,7 +309,9 @@
 					<span class="file-cta">
 						<span class="file-label">Choose a docx file…</span>
 					</span>
-					<span class="file-name">No file chosen</span>
+					<span class="file-name">
+						{selectedDocxFile ? selectedDocxFile.name : 'No file chosen'}
+					</span>
 				</label>
 			</div>
 		</div>
@@ -273,7 +319,7 @@
 		<div class="field">
 			<div class="control">
 				<!-- <button class="button is-primary" on:click={processDocx}>Add Watermark</button> -->
-				<button class="button is-primary">Add Watermark</button>
+				<button class="button is-primary" on:click={exportDocx}>Apply Changes</button>
 			</div>
 		</div>
 
@@ -318,14 +364,6 @@
 							</div>
 							<div class="control">
 								<button class="button is-link is-fullwidth" on:click={addText}>Add Text</button>
-							</div>
-						</div>
-
-						<!-- Pick Color -->
-						<div class="field">
-							<label class="label">Pick Color</label>
-							<div class="control">
-								<input type="color" class="input" />
 							</div>
 						</div>
 
@@ -381,9 +419,9 @@
 						<!-- 	style={`-webkit-transform: scale(${canvas.transformedStyleRatio});`} -->
 						<!-- ></canvas> -->
 
-						<button class="button is-link" on:click={() => exportCanvas(canvas.fabriccanvas)}
-							>Export</button
-						>
+						<button class="button is-link" on:click={() => exportCanvas(canvas.fabriccanvas)}>
+							Export
+						</button>
 					</div>
 				{/each}
 			</div>
