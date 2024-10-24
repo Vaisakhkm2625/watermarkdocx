@@ -1,6 +1,7 @@
 <script>
 	import { Canvas, Rect, Circle, Text, Image as FabricImage } from 'fabric';
 	import { onMount } from 'svelte';
+	import JSZip from 'jszip';
 
 	let mainFabricCanvas;
 	// {id: canvas1, fabriccanvas: fabricCanvasInstance, sync: bool,transformedStyleRatio}
@@ -8,6 +9,7 @@
 	//let = [];
 	let inputText = '';
 	let selectedImageFile = null; // For image uploads
+	let selectedDocxFile = null; // For image uploads
 
 	let style = '-webkit-transform: scale(1);';
 
@@ -20,7 +22,42 @@
 		mainFabricCanvas.on('object:moving', syncCanvasObjects);
 		mainFabricCanvas.on('object:scaling', syncCanvasObjects);
 	});
+
 	let fileInput;
+
+	function handleDocxInput(event) {
+		selectedDocxFile = event.target.files[0];
+		if (selectedDocxFile && selectedDocxFile.name.endsWith('.docx')) {
+			extractImages();
+		} else {
+			alert('Please upload a valid .docx file');
+		}
+	}
+
+	async function extractImages() {
+		console.log('extracting images');
+
+		const reader = new FileReader();
+
+		reader.onload = async function (event) {
+			const arrayBuffer = event.target.result;
+
+			const zip = new JSZip();
+			await zip.loadAsync(arrayBuffer);
+
+			const imageFiles = Object.keys(zip.files).filter((fileName) => fileName.includes('media/'));
+			console.log(imageFiles);
+
+			for (let i = 0; i < imageFiles.length; i++) {
+				const imageFile = zip.files[imageFiles[i]];
+
+				selectedImageFile = await imageFile.async('blob');
+				setBackgroundImage();
+			}
+		};
+
+		reader.readAsArrayBuffer(selectedDocxFile);
+	}
 
 	function addrect() {
 		const rect = new Rect({
@@ -91,46 +128,53 @@
 		if (selectedImageFile) {
 			const reader = new FileReader();
 			reader.onload = function (event) {
-				const imgElement = new Image();
-				imgElement.src = event.target.result;
-				imgElement.onload = function () {
-					// Dynamically generate a new canvas ID
-					const newCanvasId = `canvas${canvases.length + 1}`;
-					//const transformedStyleRatio = `-webkit-transform: scale(${(window.screen.width / imgElement.width) * (2 / 3)});`;
-					const transformedStyleRatio = (window.screen.width / imgElement.width) * (2 / 3);
-					console.log(transformedStyleRatio);
-					canvases = [
-						...canvases,
-						{ id: newCanvasId, sync: true, transformedStyleRatio: transformedStyleRatio }
-					]; // Update canvases array
-
-					// Create a new canvas instance and set its background image
-					setTimeout(() => {
-						// Wait for canvas to be added to DOM
-						const canvasBGImage = new FabricImage(imgElement);
-
-						const newCanvas = new Canvas(newCanvasId, {
-							width: imgElement.width,
-							height: imgElement.height
-						});
-						//const canvasBGImage = new FabricImage(imgElement, {
-						//	scaleX: newCanvas.width / imgElement.width,
-						//	scaleY: newCanvas.height / imgElement.height
-						//});
-
-						newCanvas.set({ backgroundImage: canvasBGImage });
-						//newCanvas.setDimensions({ width: imgElement.width, height: imgElement.height });
-						newCanvas.requestRenderAll();
-						//newCanvas.lowerCanvasEl.style.width = '400px';
-						//newCanvas.lowerCanvasEl.style.height = '400px';
-
-						newCanvas.canvasBGImage = canvasBGImage;
-						findCanvasById(newCanvasId).fabriccanvas = newCanvas;
-					}, 0);
-				};
+				setImageCanvas(event.target.result);
 			};
+			console.log(selectedImageFile);
 			reader.readAsDataURL(selectedImageFile);
 		}
+	}
+
+	function setImageCanvas(imageUrl) {
+		const imgElement = new Image();
+		imgElement.src = imageUrl;
+		console.log({ imgElement });
+
+		imgElement.onload = function () {
+			// Dynamically generate a new canvas ID
+			const newCanvasId = `canvas${canvases.length + 1}`;
+			//const transformedStyleRatio = `-webkit-transform: scale(${(window.screen.width / imgElement.width) * (2 / 3)});`;
+			const transformedStyleRatio = (window.screen.width / imgElement.width) * (2 / 3);
+			console.log(transformedStyleRatio);
+			canvases = [
+				...canvases,
+				{ id: newCanvasId, sync: true, transformedStyleRatio: transformedStyleRatio }
+			]; // Update canvases array
+
+			// Create a new canvas instance and set its background image
+			setTimeout(() => {
+				// Wait for canvas to be added to DOM
+				const canvasBGImage = new FabricImage(imgElement);
+
+				const newCanvas = new Canvas(newCanvasId, {
+					width: imgElement.width,
+					height: imgElement.height
+				});
+				//const canvasBGImage = new FabricImage(imgElement, {
+				//	scaleX: newCanvas.width / imgElement.width,
+				//	scaleY: newCanvas.height / imgElement.height
+				//});
+
+				newCanvas.set({ backgroundImage: canvasBGImage });
+				//newCanvas.setDimensions({ width: imgElement.width, height: imgElement.height });
+				newCanvas.requestRenderAll();
+				//newCanvas.lowerCanvasEl.style.width = '400px';
+				//newCanvas.lowerCanvasEl.style.height = '400px';
+
+				newCanvas.canvasBGImage = canvasBGImage;
+				findCanvasById(newCanvasId).fabriccanvas = newCanvas;
+			}, 0);
+		};
 	}
 
 	function setBgAll() {
@@ -216,6 +260,7 @@
 						bind:this={fileInput}
 						name="resume"
 						accept=".docx"
+						on:change={handleDocxInput}
 					/>
 					<span class="file-cta">
 						<span class="file-label">Choose a docx file…</span>
@@ -298,10 +343,13 @@
 									<span class="file-cta">
 										<span class="file-label">Choose an image…</span>
 									</span>
-									<span class="file-name">No image chosen</span>
+									<span class="file-name">
+										{selectedImageFile ? selectedImageFile.name : 'hell'}</span
+									>
 								</label>
 							</div>
 						</div>
+
 						<div class="control">
 							<button class="button is-link is-fullwidth" on:click={setBackgroundImage}
 								>Create Canvas with Background Image</button
