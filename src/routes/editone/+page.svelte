@@ -3,11 +3,12 @@
 	import { onMount } from 'svelte';
 
 	let mainFabricCanvas;
-	// {id: canvas1, fabriccanvas: fabricCanvasInstance, sync: bool}
+	// {id: canvas1, fabriccanvas: fabricCanvasInstance, sync: bool,transformedStyleRatio}
 	let canvases = []; // No predefined canvas IDs, dynamically add them
 	//let = [];
 	let inputText = '';
 	let selectedImageFile = null; // For image uploads
+
 	let style = '-webkit-transform: scale(1);';
 
 	onMount(() => {
@@ -95,12 +96,19 @@
 				imgElement.onload = function () {
 					// Dynamically generate a new canvas ID
 					const newCanvasId = `canvas${canvases.length + 1}`;
-					canvases = [...canvases, { id: newCanvasId, sync: true }]; // Update canvases array
+					//const transformedStyleRatio = `-webkit-transform: scale(${(window.screen.width / imgElement.width) * (2 / 3)});`;
+					const transformedStyleRatio = (window.screen.width / imgElement.width) * (2 / 3);
+					console.log(transformedStyleRatio);
+					canvases = [
+						...canvases,
+						{ id: newCanvasId, sync: true, transformedStyleRatio: transformedStyleRatio }
+					]; // Update canvases array
 
 					// Create a new canvas instance and set its background image
 					setTimeout(() => {
 						// Wait for canvas to be added to DOM
 						const canvasBGImage = new FabricImage(imgElement);
+
 						const newCanvas = new Canvas(newCanvasId, {
 							width: imgElement.width,
 							height: imgElement.height
@@ -318,6 +326,12 @@
 						</label>
 
 						<canvas class="canvas" id={canvas.id}></canvas>
+						;
+						<!-- <canvas -->
+						<!-- 	class="canvas" -->
+						<!-- 	id={canvas.id} -->
+						<!-- 	style={`-webkit-transform: scale(${canvas.transformedStyleRatio});`} -->
+						<!-- ></canvas> -->
 
 						<button class="button is-link" on:click={() => exportCanvas(canvas.fabriccanvas)}
 							>Export</button
