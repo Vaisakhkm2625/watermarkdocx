@@ -28,8 +28,8 @@
 
 	onMount(() => {
 		mainFabricCanvas = new Canvas('mainFabricCanvas', {
-			width: canvascontainer.width.clone(),
-			height: canvascontainer.height
+			width: cwidth - 10,
+			height: cheight - 10
 		});
 
 		// containersize = { width: ,height: };
@@ -419,15 +419,15 @@
 			<!-- Left Column: Main Canvas -->
 			<div bind:clientWidth={cwidth} bind:clientHeight={cheight} class="column is-two-thirds">
 				<!-- <div bind:this={canvascontainer} class="column is-two-thirds"> -->
-				<div id="mainCanvasContainer" class="box">
-					<!-- {#if containersize} -->
-					<!-- <canvas id="mainFabricCanvas" class="main-canvas" width={cwidth} height={cheight}></canvas> -->
-					<canvas id="mainFabricCanvas" class="main-canvas"></canvas>
+				<!-- <div id="mainCanvasContainer" class="box"> -->
+				<!-- {#if containersize} -->
+				<!-- <canvas id="mainFabricCanvas" class="main-canvas" width={cwidth} height={cheight}></canvas> -->
+				<canvas id="mainFabricCanvas" class="main-canvas"></canvas>
 
-					<!-- width={`${window.screen.width * (2 / 3) - 100}px`} -->
-					<!-- height={`${window.screen.height * (2 / 3)}px`} -->
-					<!-- {/if} -->
-				</div>
+				<!-- width={`${window.screen.width * (2 / 3) - 100}px`} -->
+				<!-- height={`${window.screen.height * (2 / 3)}px`} -->
+				<!-- {/if} -->
+				<!-- </div> -->
 			</div>
 
 			<!-- Right Column: Controls in a Card -->
