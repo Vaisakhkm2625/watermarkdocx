@@ -7,7 +7,7 @@ This application can batch edit all the pictures in a docx file, uploaded by use
 
 ## Why?
 
-There isn’t a simple application that can do this; at least, I wasn’t able to find one. Even enterprise offerings like docxtemplater require a custom extension to support this feature, even with a subscription.
+There isn’t a simple application that can do this; at least, I wasn’t able to find one. Even enterprise offerings like [docxtemplater](docxtemplater.com) require a custom extension to support this feature, even with a subscription.
 
 Our university requires assignments to be submitted with roll numbers as watermark in each images of documents, to avoid plagiarisms - which for a 50 page doc group project with 10 group members, can take few hours to watermark more than 500 images manually
 
