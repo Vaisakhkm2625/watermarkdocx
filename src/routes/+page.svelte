@@ -478,7 +478,7 @@
 							</div>
 
 							<!-- Opacity Slider -->
-							<label for="opacity-slider">Set Opacity:</label>
+							<label for="opacity-slider" class="label">Set Opacity:</label>
 							<input
 								id="opacity-slider"
 								type="range"
@@ -491,28 +491,33 @@
 
 							<!-- {#if selectedObject.type === 'textbox'} -->
 							<div>
-								<label for="font">Font family:</label>
+								<label for="font" class="label">Font family:</label>
 
-								<select
-									bind:value={selectedFont}
-									on:change={(e) => updateSelectionFont(e.target.value)}
-									class="select"
-								>
-									{#each fonts as font}
-										<option value={font}>{font}</option>
-									{/each}
-								</select>
+								<div class="select is-link">
+									<select
+										bind:value={selectedFont}
+										on:change={(e) => updateSelectionFont(e.target.value)}
+										class="select"
+									>
+										{#each fonts as font}
+											<option value={font}>{font}</option>
+										{/each}
+									</select>
+								</div>
 							</div>
 							<!-- {/if} -->
 						</div>
 						<!-- {/if} -->
 
-						<div>
-							<label>
-								<input type="checkbox" bind:checked={useDebounce} />
-								Enable Debouncing (improved perf)
-							</label>
-						</div>
+						<details>
+							<summary> Advanced </summary>
+							<div>
+								<label>
+									<input type="checkbox" bind:checked={useDebounce} />
+									Enable Debouncing (improved perf)
+								</label>
+							</div>
+						</details>
 
 						{#if debug}
 							<!-- Image Upload -->
