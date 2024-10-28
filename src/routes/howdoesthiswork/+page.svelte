@@ -1,3 +1,12 @@
+<script>
+	import { marked } from 'marked';
+
+	let markdown = '';
+</script>
+
+<textarea bind:value={markdown} placeholder="Enter markdown here" />
+<div class="preview">{@html marked(markdown)}</div>
+
 <h1 class="h1">How Does This Work?</h1>
 <h3>Do you know docx is just a zip file?</h3>
 

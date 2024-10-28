@@ -11,6 +11,65 @@ There isn’t a simple application that can do this; at least, I wasn’t able t
 
 Our university requires assignments to be submitted with roll numbers as watermark in each images of documents, to avoid plagiarisms - which for a 50 page doc group project with 10 group members, can take few hours to watermark more than 500 images manually
 
+## How does this work?
+
+Docx files are essentially just zip archive
+```
+~/Downloads/test 
+❯ unzip file.docx 
+Archive:  file.docx
+  inflating: [Content_Types].xml     
+  inflating: _rels/.rels             
+  inflating: word/document.xml  
+.
+.
+.
+```
+
+<details>
+    <summary> Open this to see the directory structure </summary>
+
+```
+❯ ls --tree
+ .
+├──  _rels
+├──  docProps
+│  ├── 󰗀 app.xml
+│  └── 󰗀 core.xml
+├──  word
+│  ├──  _rels
+│  │  └──  document.xml.rels
+│  ├──  embeddings
+│  │  └──  oleObject1.bin
+│  ├──  media
+│  │  ├──  image1.png
+│  │  ├──  image2.png
+│  │  ├──  image3.png
+│  │  ├──  image4.png
+│  │  ├──  image5.png
+│  │  ├──  image6.png
+│  │  ├──  image7.png
+│  │  ├──  image8.png
+│  │  ├──  image9.png
+│  │  ├──  image10.png
+│  │  └──  image11.emf
+│  ├──  theme
+│  │  └── 󰗀 theme1.xml
+│  ├── 󰗀 document.xml
+│  ├── 󰗀 fontTable.xml
+│  ├── 󰗀 numbering.xml
+│  ├── 󰗀 settings.xml
+│  ├── 󰗀 styles.xml
+│  └── 󰗀 webSettings.xml
+├── 󰗀 [Content_Types].xml
+└──  file.docx
+
+```
+</details>
+
+we just need to replace the images in *word/media/* directory...
+
+so for that we JSZip library - we unzip the file, add watermaks and rezip the file... easy..
 
 
 ## Developing
