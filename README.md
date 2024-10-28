@@ -1,42 +1,35 @@
-# create-svelte
+# Watermark docx images
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+> WIP.. Proof of concept... 
+> need to rewrite in svelte5 and need to properly splitting components
 
-## Creating a project
+This application can batch edit all the pictures in a docx file, uploaded by user
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Why?
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+There isn’t a simple application that can do this; at least, I wasn’t able to find one. Even enterprise offerings like docxtemplater require a custom extension to support this feature, even with a subscription.
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+Our university requires assignments to be submitted with roll numbers as watermark in each images of documents, to avoid plagiarisms - which for a 50 page doc group project with 10 group members, can take few hours to watermark more than 500 images manually
+
+
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+git clone git@github.com:Vaisakhkm2625/watermarkdocx.git
+npm install
+npm run dev # opens in host mode at localhost:8080
 ```
 
 ## Building
 
-To create a production version of your app:
+To create a production version of your app and deploy to github pages:
 
+(create a gh-pages branch in github and point gh pages to that branch)
 ```bash
 npm run build
+npm run deploy
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
-
 
 # Notes
 
@@ -55,7 +48,7 @@ Describe object's corner position in canvas element coordinates. properties are 
 oCoords
 
 
-alinment system
+alignment system
 https://chatgpt.com/share/67011ba7-2830-8003-b2a5-0f08fe9f67e6
 
 snappy rect
@@ -65,4 +58,4 @@ https://hackernoon.com/mastering-object-snapping-in-fabricjs-introducing-the-sna
 
 in the future i need to create this library
 
-but for now, i can get awy with scaling everything to width aand hight
+but for now, i can get away with scaling everything to width and hight
