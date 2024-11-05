@@ -24,6 +24,8 @@
 	let selectedColor = 'red';
 	let selectedOpacity = 1;
 
+	let copiedObjectData; //todo: remove
+
 	let style = '-webkit-transform: scale(1);';
 
 	onMount(() => {
@@ -35,6 +37,8 @@
 		// containersize = { width: ,height: };
 
 		addrect();
+
+		document.addEventListener('keydown', handleKeyDown);
 
 		mainFabricCanvas.on('after:render', () => {
 			if (!useDebounce) {
@@ -203,6 +207,55 @@
 	function deleteSelection() {
 		mainFabricCanvas.remove(mainFabricCanvas.getActiveObject());
 	}
+
+	/** TODO: patched code for buttons, remove and use proper funtions*/
+	function handleKeyDown(e) {
+		if (e.ctrlKey && e.key === 'c') {
+			copyObject(mainFabricCanvas);
+		} else if (e.ctrlKey && e.key === 'v') {
+			pasteObject(mainFabricCanvas);
+		} else if (e.ctrlKey && e.key === 'd') {
+			copyObject(mainFabricCanvas);
+			pasteObject(mainFabricCanvas);
+		} else if (e.key === 'Delete' || e.key === 'Backspace') {
+			deleteObject(mainFabricCanvas);
+		}
+	}
+
+	// Function to copy the selected object
+	function copyObject(canvas) {
+		const activeObject = canvas.getActiveObject();
+		if (activeObject) {
+			//copiedObjectData = JSON.parse(JSON.stringify(activeObject.toObject()));
+			copiedObjectData = activeObject.clone();
+		}
+	}
+
+	// Function to paste the copied object
+	async function pasteObject(canvas) {
+		if (copiedObjectData) {
+			// fabric.util.enlivenObjects([copiedObjectData], (objects) => {
+			const clonedObject = await copiedObjectData;
+			clonedObject.set({
+				left: clonedObject.left + 10, // Offset to show as a new object
+				top: clonedObject.top + 10
+			});
+			canvas.add(clonedObject);
+			canvas.setActiveObject(clonedObject);
+			canvas.requestRenderAll();
+			// });
+		}
+	}
+
+	// Function to delete the selected object
+	function deleteObject(canvas) {
+		const activeObject = canvas.getActiveObject();
+		if (activeObject) {
+			canvas.remove(activeObject);
+			canvas.requestRenderAll();
+		}
+	}
+	/** ^ END OF PATCH : patched code for buttons, remove and use proper funtions*/
 
 	const findCanvasById = (id) => {
 		return canvases.find((canvas) => canvas.id === id);
